@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>短歌PNG変換</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f0f0;
+      color: #222;
+      min-height: 100dvh;
+    }
+
+    .app {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .sub {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #888;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* タブ */
+    .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tab {
+      flex: 1; padding: 8px; border: 1.5px solid #ddd;
+      border-radius: 8px; background: #f5f5f5;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .tab.active { background: #222; color: #fff; border-color: #222; }
+
+    textarea {
+      width: 100%; height: 160px; padding: 10px;
+      border: 1.5px solid #ddd; border-radius: 8px;
+      font-size: 14px; font-family: inherit; resize: vertical;
+      line-height: 1.6;
+    }
+    textarea:focus { outline: none; border-color: #666; }
+
+    .file-drop {
+      border: 2px dashed #ddd; border-radius: 8px;
+      padding: 28px 16px; text-align: center;
+      cursor: pointer; color: #999; font-size: 13px;
+      transition: border-color .15s;
+    }
+    .file-drop:hover, .file-drop.drag { border-color: #666; color: #444; }
+    .file-drop input { display: none; }
+
+    /* フォームグループ */
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 600; }
+
+    /* 選択ボタン群 */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 6px 14px; border-radius: 20px;
+      border: 1.5px solid #ddd; background: #f5f5f5;
+      font-size: 13px; cursor: pointer; transition: all .15s;
+      font-weight: 500;
+    }
+    .chip.active { border-color: #222; background: #222; color: #fff; }
+
+    /* 色ボタン */
+    .color-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .color-btn {
+      padding: 10px 4px; border-radius: 8px;
+      border: 2px solid transparent;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .color-btn.active { border-color: #0066cc; }
+
+    /* スライダー */
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    input[type=range] {
+      flex: 1; height: 4px; accent-color: #222;
+      cursor: pointer;
+    }
+    .slider-val { min-width: 40px; text-align: right; font-size: 13px; color: #555; font-variant-numeric: tabular-nums; }
+
+    /* ダウンロードモード */
+    .radio-group { display: flex; gap: 16px; }
+    .radio-label { display: flex; align-items: center; gap: 6px; font-size: 14px; cursor: pointer; }
+    input[type=radio] { cursor: pointer; accent-color: #222; }
+
+    /* ボタン */
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      padding: 13px; border-radius: 10px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-ghost { background: #f0f0f0; color: #333; }
+    .btn-ghost:hover { background: #e0e0e0; }
+    .btn-primary { background: #222; color: #fff; }
+    .btn-primary:hover { background: #000; }
+    .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* プレビュー */
+    #previewWrap { display: none; margin-top: 14px; }
+    #previewWrap.show { display: block; }
+    #previewWrap .card-title { margin-bottom: 8px; }
+    #previewCanvas {
+      width: 100%; border-radius: 8px; display: block;
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+
+    /* トースト */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
+      background: #222; color: #fff; padding: 10px 20px;
+      border-radius: 24px; font-size: 13px; font-weight: 500;
+      white-space: nowrap; transition: transform .25s, opacity .25s;
+      opacity: 0; pointer-events: none; z-index: 999;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>短歌PNG変換</h1>
+  <p class="sub">縦書き画像を一括生成・ダウンロード</p>
+
+  <!-- 入力 -->
+  <div class="card">
+    <div class="card-title">入力</div>
+    <div class="tabs">
+      <button class="tab active" id="tabText">テキスト入力</button>
+      <button class="tab" id="tabFile">ファイル</button>
+    </div>
+    <div id="paneText">
+      <textarea id="tankaText" placeholder="短歌を入力。空行で区切ると1枚ずつの画像になります。
+
+例：
+春の日や
+桜咲き誇る
+庭の隅
+心も花と
+咲き乱れたり
+
+夏の月
+清き光に
+照らされて
+思い出たちは
+またしも浮かぶ"></textarea>
+    </div>
+    <div id="paneFile" style="display:none">
+      <div class="file-drop" id="fileDrop">
+        <input type="file" id="fileInput" accept=".txt">
+        <div>📄 タップまたはドラッグ＆ドロップ</div>
+        <div style="margin-top:6px; font-size:12px;">テキストファイル (.txt)</div>
+        <div id="fileName" style="margin-top:8px; color:#444; font-weight:600;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- デザイン -->
+  <div class="card">
+    <div class="card-title">デザイン</div>
+
+    <div class="field">
+      <label>画像サイズ</label>
+      <div class="chip-group" id="sizeGroup">
+        <button class="chip" data-val="small">小 600×800</button>
+        <button class="chip active" data-val="medium">中 800×1000</button>
+        <button class="chip" data-val="large">大 1000×1200</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>文字サイズ　<span id="fontSizeVal">40px</span></label>
+      <div class="slider-row">
+        <span style="font-size:11px;color:#bbb">小</span>
+        <input type="range" id="fontSize" min="20" max="72" value="40">
+        <span style="font-size:11px;color:#bbb">大</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>行間　<span id="lineGapVal">15px</span></label>
+      <div class="slider-row">
+        <span style="font-size:11px;color:#bbb">狭</span>
+        <input type="range" id="lineGap" min="0" max="60" value="15">
+        <span style="font-size:11px;color:#bbb">広</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>字間　<span id="charGapVal">8px</span></label>
+      <div class="slider-row">
+        <span style="font-size:11px;color:#bbb">狭</span>
+        <input type="range" id="charGap" min="0" max="30" value="8">
+        <span style="font-size:11px;color:#bbb">広</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>背景色</label>
+      <div class="color-group" id="bgGroup">
+        <button class="color-btn active" data-val="white" style="background:#fff;color:#222;border:1.5px solid #ddd;">白</button>
+        <button class="color-btn" data-val="cream" style="background:#FFF8F0;color:#222;">クリーム</button>
+        <button class="color-btn" data-val="lightgray" style="background:#F5F5F5;color:#222;">薄灰</button>
+        <button class="color-btn" data-val="darkblue" style="background:#3F4A57;color:#E8EAEE;">濃青灰</button>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:0">
+      <label>文字色</label>
+      <div class="color-group" id="tcGroup">
+        <button class="color-btn active" data-val="black" style="background:#fff;color:#000;border:1.5px solid #ddd;">黒</button>
+        <button class="color-btn" data-val="darkgray" style="background:#fff;color:#333;border:1.5px solid #ddd;">濃灰</button>
+        <button class="color-btn" data-val="darkbrown" style="background:#fff;color:#654321;border:1.5px solid #ddd;">濃茶</button>
+        <button class="color-btn" data-val="lightgray" style="background:#fff;color:#B0B0B0;border:1.5px solid #ddd;">薄灰</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ダウンロード方法 -->
+  <div class="card">
+    <div class="card-title">ダウンロード方法</div>
+    <div class="radio-group">
+      <label class="radio-label">
+        <input type="radio" name="dlMode" value="batch" checked> 一括（ZIP）
+      </label>
+      <label class="radio-label">
+        <input type="radio" name="dlMode" value="individual"> 一枚ずつ
+      </label>
+    </div>
+  </div>
+
+  <!-- ボタン -->
+  <div class="btn-row">
+    <button class="btn btn-ghost" id="previewBtn">プレビュー</button>
+    <button class="btn btn-primary" id="convertBtn">変換 &amp; ダウンロード</button>
+  </div>
+
+  <!-- プレビュー -->
+  <div id="previewWrap">
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">プレビュー（1枚目）</div>
+      <canvas id="previewCanvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- JSZip CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<script>
+// ===== 定数 =====
+const BG = {
+  white:     '#FFFFFF',
+  cream:     '#FFF8F0',
+  lightgray: '#F5F5F5',
+  darkblue:  '#3F4A57',
+};
+const TC = {
+  black:     '#000000',
+  darkgray:  '#333333',
+  darkbrown: '#654321',
+  lightgray: '#B0B0B0',
+};
+const SIZES = {
+  small:  [600,  800],
+  medium: [800,  1000],
+  large:  [1000, 1200],
+};
+
+// ===== 状態 =====
+let bgKey = 'white';
+let tcKey = 'black';
+let sizeKey = 'medium';
+
+// ===== UI操作 =====
+// タブ切り替え
+document.getElementById('tabText').addEventListener('click', () => {
+  document.getElementById('tabText').classList.add('active');
+  document.getElementById('tabFile').classList.remove('active');
+  document.getElementById('paneText').style.display = '';
+  document.getElementById('paneFile').style.display = 'none';
+});
+document.getElementById('tabFile').addEventListener('click', () => {
+  document.getElementById('tabFile').classList.add('active');
+  document.getElementById('tabText').classList.remove('active');
+  document.getElementById('paneFile').style.display = '';
+  document.getElementById('paneText').style.display = 'none';
+});
+
+// ファイル選択
+const fileDrop = document.getElementById('fileDrop');
+const fileInput = document.getElementById('fileInput');
+fileDrop.addEventListener('click', () => fileInput.click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.classList.add('drag'); });
+fileDrop.addEventListener('dragleave', () => fileDrop.classList.remove('drag'));
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault(); fileDrop.classList.remove('drag');
+  loadFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));
+function loadFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('tankaText').value = e.target.result;
+    document.getElementById('fileName').textContent = '✅ ' + file.name;
+    document.getElementById('tabText').click();
+    toast('ファイルを読み込みました');
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// チップ（サイズ）
+document.getElementById('sizeGroup').addEventListener('click', e => {
+  const btn = e.target.closest('.chip');
+  if (!btn) return;
+  document.querySelectorAll('#sizeGroup .chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  sizeKey = btn.dataset.val;
+});
+
+// 背景色
+document.getElementById('bgGroup').addEventListener('click', e => {
+  const btn = e.target.closest('.color-btn');
+  if (!btn) return;
+  document.querySelectorAll('#bgGroup .color-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  bgKey = btn.dataset.val;
+});
+
+// 文字色
+document.getElementById('tcGroup').addEventListener('click', e => {
+  const btn = e.target.closest('.color-btn');
+  if (!btn) return;
+  document.querySelectorAll('#tcGroup .color-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  tcKey = btn.dataset.val;
+});
+
+// スライダー
+document.getElementById('fontSize').addEventListener('input', e =>
+  document.getElementById('fontSizeVal').textContent = e.target.value + 'px');
+document.getElementById('lineGap').addEventListener('input', e =>
+  document.getElementById('lineGapVal').textContent = e.target.value + 'px');
+document.getElementById('charGap').addEventListener('input', e =>
+  document.getElementById('charGapVal').textContent = e.target.value + 'px');
+
+// ===== 短歌パース =====
+function parseTankas() {
+  const text = document.getElementById('tankaText').value.trim();
+  return text.split(/\n\n+/).map(t => t.trim()).filter(Boolean);
+}
+
+// ===== Canvas描画 =====
+function drawTanka(canvas, text) {
+  const [w, h] = SIZES[sizeKey];
+  canvas.width  = w;
+  canvas.height = h;
+
+  const ctx = canvas.getContext('2d');
+  const fontSize  = parseInt(document.getElementById('fontSize').value);
+  const lineGap   = parseInt(document.getElementById('lineGap').value);
+  const charGap   = parseInt(document.getElementById('charGap').value);
+
+  // 背景
+  ctx.fillStyle = BG[bgKey];
+  ctx.fillRect(0, 0, w, h);
+
+  // フォント
+  ctx.fillStyle = TC[tcKey];
+  ctx.font = `${fontSize}px serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+
+  const chars = [...text.replace(/\n/g, '')];
+  if (!chars.length) return;
+
+  const charH = fontSize + charGap;
+  const lineW = fontSize + lineGap;
+  const padding = 60;
+
+  const maxPerCol = Math.max(1, Math.floor((h - padding * 2) / charH));
+
+  // 列に分割
+  const cols = [];
+  let col = [];
+  for (const ch of chars) {
+    col.push(ch);
+    if (col.length >= maxPerCol) { cols.push(col); col = []; }
+  }
+  if (col.length) cols.push(col);
+
+  // 中央配置
+  const totalW = cols.length * lineW;
+  const totalH = Math.max(...cols.map(c => c.length)) * charH;
+  const startX  = (w + totalW) / 2 - lineW / 2;
+  const startY  = (h - totalH) / 2 + charH / 2;
+
+  cols.forEach((col, li) => {
+    const x = startX - li * lineW;
+    col.forEach((ch, ci) => {
+      ctx.fillText(ch, x, startY + ci * charH);
+    });
+  });
+}
+
+// ===== プレビュー =====
+document.getElementById('previewBtn').addEventListener('click', () => {
+  const tankas = parseTankas();
+  if (!tankas.length) { toast('短歌を入力してください'); return; }
+
+  const canvas = document.getElementById('previewCanvas');
+  drawTanka(canvas, tankas[0]);
+  document.getElementById('previewWrap').classList.add('show');
+  canvas.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  toast('プレビューを表示しました');
+});
+
+// ===== 変換＆ダウンロード =====
+document.getElementById('convertBtn').addEventListener('click', async () => {
+  const tankas = parseTankas();
+  if (!tankas.length) { toast('短歌を入力してください'); return; }
+
+  const mode = document.querySelector('input[name="dlMode"]:checked').value;
+  const btn = document.getElementById('convertBtn');
+  btn.disabled = true;
+  btn.textContent = '変換中…';
+
+  try {
+    if (mode === 'batch') {
+      await downloadZip(tankas);
+    } else {
+      await downloadIndividual(tankas);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '変換 & ダウンロード';
+  }
+});
+
+async function canvasToBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+async function downloadZip(tankas) {
+  const zip = new JSZip();
+  const tmp = document.createElement('canvas');
+
+  for (let i = 0; i < tankas.length; i++) {
+    drawTanka(tmp, tankas[i]);
+    const blob = await canvasToBlob(tmp);
+    zip.file(`tanka_${String(i + 1).padStart(2, '0')}.png`, blob);
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  triggerDownload(blob, 'tankas.zip');
+  toast(`${tankas.length}枚をZIPで保存しました！`);
+}
+
+async function downloadIndividual(tankas) {
+  const tmp = document.createElement('canvas');
+  for (let i = 0; i < tankas.length; i++) {
+    drawTanka(tmp, tankas[i]);
+    const blob = await canvasToBlob(tmp);
+    triggerDownload(blob, `tanka_${String(i + 1).padStart(2, '0')}.png`);
+    if (i < tankas.length - 1) await sleep(600);
+  }
+  toast(`${tankas.length}枚をダウンロードしました！`);
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ===== トースト =====
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
