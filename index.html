@@ -263,6 +263,10 @@
     <button class="btn btn-primary" id="convertBtn">変換 &amp; ダウンロード</button>
   </div>
 
+  <div style="margin-top:10px;">
+    <button class="btn btn-ghost" id="clearBtn" style="width:100%;">入力をクリア</button>
+  </div>
+
   <!-- プレビュー -->
   <div id="previewWrap">
     <div class="card" style="margin-top:14px">
@@ -402,23 +406,19 @@ function drawTanka(canvas, text) {
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
 
-  const chars = [...text.replace(/\n/g, '')];
-  if (!chars.length) return;
+  // 改行を保持して列を作成
+  const lines = text.split('\n').filter(line => line.trim().length > 0);
+  if (!lines.length) return;
 
   const charH = fontSize + charGap;
   const lineW = fontSize + lineGap;
   const padding = 60;
 
-  const maxPerCol = Math.max(1, Math.floor((h - padding * 2) / charH));
-
-  // 列に分割
+  // 各行を列として扱う
   const cols = [];
-  let col = [];
-  for (const ch of chars) {
-    col.push(ch);
-    if (col.length >= maxPerCol) { cols.push(col); col = []; }
+  for (const line of lines) {
+    cols.push([...line]);
   }
-  if (col.length) cols.push(col);
 
   // 中央配置
   const totalW = cols.length * lineW;
@@ -433,6 +433,16 @@ function drawTanka(canvas, text) {
     });
   });
 }
+
+// ===== クリア =====
+document.getElementById('clearBtn').addEventListener('click', () => {
+  if (confirm('入力内容をすべて削除してもよろしいですか？')) {
+    document.getElementById('tankaText').value = '';
+    document.getElementById('fileName').textContent = '';
+    document.getElementById('previewWrap').classList.remove('show');
+    toast('入力をクリアしました');
+  }
+});
 
 // ===== プレビュー =====
 document.getElementById('previewBtn').addEventListener('click', () => {
