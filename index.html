@@ -433,9 +433,13 @@ function drawTanka(canvas, text) {
       const y = startY + ci * charH;
 
       if (ch === '、' || ch === '。') {
-        // 句読点を小さく表示
-        ctx.font = `${fontSize * 0.7}px serif`;
-        ctx.fillText(ch, x, y);
+        // 句読点を右上に配置
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'bottom';
+        ctx.font = `${fontSize * 0.6}px serif`;
+        ctx.fillText(ch, x + fontSize * 0.25, y - fontSize * 0.3);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.font = `${fontSize}px serif`;
       } else if (ch === 'ー') {
         // 長音を垂直線として描画
