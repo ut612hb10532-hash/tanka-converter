@@ -172,6 +172,7 @@
 照らされて
 思い出たちは
 またしも浮かぶ"></textarea>
+      <button class="btn btn-ghost" id="clearBtn" style="width:100%;margin-top:8px;">入力をクリア</button>
     </div>
     <div id="paneFile" style="display:none">
       <div class="file-drop" id="fileDrop">
@@ -197,28 +198,28 @@
     </div>
 
     <div class="field">
-      <label>文字サイズ　<span id="fontSizeVal">40px</span></label>
+      <label>文字サイズ　<span id="fontSizeVal">28px</span></label>
       <div class="slider-row">
         <span style="font-size:11px;color:#bbb">小</span>
-        <input type="range" id="fontSize" min="20" max="72" value="40">
+        <input type="range" id="fontSize" min="20" max="72" value="28">
         <span style="font-size:11px;color:#bbb">大</span>
       </div>
     </div>
 
     <div class="field">
-      <label>行間　<span id="lineGapVal">15px</span></label>
+      <label>行間　<span id="lineGapVal">10px</span></label>
       <div class="slider-row">
         <span style="font-size:11px;color:#bbb">狭</span>
-        <input type="range" id="lineGap" min="0" max="60" value="15">
+        <input type="range" id="lineGap" min="0" max="60" value="10">
         <span style="font-size:11px;color:#bbb">広</span>
       </div>
     </div>
 
     <div class="field">
-      <label>字間　<span id="charGapVal">8px</span></label>
+      <label>字間　<span id="charGapVal">6px</span></label>
       <div class="slider-row">
         <span style="font-size:11px;color:#bbb">狭</span>
-        <input type="range" id="charGap" min="0" max="30" value="8">
+        <input type="range" id="charGap" min="0" max="30" value="6">
         <span style="font-size:11px;color:#bbb">広</span>
       </div>
     </div>
@@ -429,7 +430,24 @@ function drawTanka(canvas, text) {
   cols.forEach((col, li) => {
     const x = startX - li * lineW;
     col.forEach((ch, ci) => {
-      ctx.fillText(ch, x, startY + ci * charH);
+      const y = startY + ci * charH;
+
+      if (ch === '、' || ch === '。') {
+        // 句読点を小さく表示
+        ctx.font = `${fontSize * 0.7}px serif`;
+        ctx.fillText(ch, x, y);
+        ctx.font = `${fontSize}px serif`;
+      } else if (ch === 'ー') {
+        // 長音を垂直線として描画
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.lineWidth = Math.max(2, fontSize * 0.15);
+        ctx.beginPath();
+        ctx.moveTo(x, y - fontSize * 0.35);
+        ctx.lineTo(x, y + fontSize * 0.35);
+        ctx.stroke();
+      } else {
+        ctx.fillText(ch, x, y);
+      }
     });
   });
 }
