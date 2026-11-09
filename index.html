@@ -198,7 +198,7 @@
     </div>
 
     <div class="field">
-      <label>文字サイズ　<span id="fontSizeVal">28px</span></label>
+      <label>文字サイズ　<span id="fontSizeVal">25px</span></label>
       <div class="slider-row">
         <span style="font-size:11px;color:#bbb">小</span>
         <input type="range" id="fontSize" min="20" max="72" value="28">
@@ -207,7 +207,7 @@
     </div>
 
     <div class="field">
-      <label>行間　<span id="lineGapVal">10px</span></label>
+      <label>行間　<span id="lineGapVal">8px</span></label>
       <div class="slider-row">
         <span style="font-size:11px;color:#bbb">狭</span>
         <input type="range" id="lineGap" min="0" max="60" value="10">
@@ -227,20 +227,20 @@
     <div class="field">
       <label>背景色</label>
       <div class="color-group" id="bgGroup">
-        <button class="color-btn active" data-val="white" style="background:#fff;color:#222;border:1.5px solid #ddd;">白</button>
+        <button class="color-btn" data-val="white" style="background:#fff;color:#222;border:1.5px solid #ddd;">白</button>
         <button class="color-btn" data-val="cream" style="background:#FFF8F0;color:#222;">クリーム</button>
         <button class="color-btn" data-val="lightgray" style="background:#F5F5F5;color:#222;">薄灰</button>
-        <button class="color-btn" data-val="darkblue" style="background:#3F4A57;color:#E8EAEE;">濃青灰</button>
+        <button class="color-btn active" data-val="darkblue" style="background:#3F4A57;color:#E8EAEE;">濃青灰</button>
       </div>
     </div>
 
     <div class="field" style="margin-bottom:0">
       <label>文字色</label>
       <div class="color-group" id="tcGroup">
-        <button class="color-btn active" data-val="black" style="background:#fff;color:#000;border:1.5px solid #ddd;">黒</button>
+        <button class="color-btn" data-val="black" style="background:#fff;color:#000;border:1.5px solid #ddd;">黒</button>
         <button class="color-btn" data-val="darkgray" style="background:#fff;color:#333;border:1.5px solid #ddd;">濃灰</button>
         <button class="color-btn" data-val="darkbrown" style="background:#fff;color:#654321;border:1.5px solid #ddd;">濃茶</button>
-        <button class="color-btn" data-val="lightgray" style="background:#fff;color:#B0B0B0;border:1.5px solid #ddd;">薄灰</button>
+        <button class="color-btn active" data-val="lightgray" style="background:#fff;color:#B0B0B0;border:1.5px solid #ddd;">薄灰</button>
       </div>
     </div>
   </div>
@@ -449,12 +449,13 @@ function drawTanka(canvas, text) {
         ctx.moveTo(x, y - fontSize * 0.3);
         ctx.lineTo(x, y + fontSize * 0.3);
         ctx.stroke();
-      } else if (ch === '「') {
-        // 始めかっこ：左寄せ
-        ctx.fillText(ch, x - fontSize * 0.2, y);
-      } else if (ch === '」') {
-        // 閉じかっこ：右寄せ
-        ctx.fillText(ch, x + fontSize * 0.2, y);
+      } else if (ch === '「' || ch === '」') {
+        // 横書きの字形を時計回りに90度回転させて縦書きにする
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.PI / 2);
+        ctx.fillText(ch, 0, 0);
+        ctx.restore();
       } else {
         ctx.fillText(ch, x, y);
       }
