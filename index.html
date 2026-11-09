@@ -442,13 +442,19 @@ function drawTanka(canvas, text) {
         ctx.textBaseline = 'middle';
         ctx.font = `${fontSize}px serif`;
       } else if (ch === 'ー') {
-        // 長音を垂直線として描画
+        // 長音を細い垂直線として描画
         ctx.strokeStyle = ctx.fillStyle;
-        ctx.lineWidth = Math.max(2, fontSize * 0.15);
+        ctx.lineWidth = fontSize * 0.08;
         ctx.beginPath();
-        ctx.moveTo(x, y - fontSize * 0.35);
-        ctx.lineTo(x, y + fontSize * 0.35);
+        ctx.moveTo(x, y - fontSize * 0.3);
+        ctx.lineTo(x, y + fontSize * 0.3);
         ctx.stroke();
+      } else if (ch === '「') {
+        // 始めかっこ：左寄せ
+        ctx.fillText(ch, x - fontSize * 0.2, y);
+      } else if (ch === '」') {
+        // 閉じかっこ：右寄せ
+        ctx.fillText(ch, x + fontSize * 0.2, y);
       } else {
         ctx.fillText(ch, x, y);
       }
